@@ -10,10 +10,11 @@ class Product(models.Model):
     def __str__(self):
         return self.name
 
-    class Customer(models.Model):
-        id = models.AutoField(primary_key=True)
-        name = models.CharField(max_length=255)
-        address = models.TextField()
 
-        def __str__(self):
-            return self.name
+class Customer(models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=255)
+    address = models.TextField()
+
+    def __str__(self):
+        return self.name
