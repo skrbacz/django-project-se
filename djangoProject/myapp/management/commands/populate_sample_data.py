@@ -2,14 +2,13 @@ from decimal import Decimal
 from django.core.management.base import BaseCommand
 from myapp.models import Product, Customer, Order
 
+
 class Command(BaseCommand):
     def handle(self, *args, **kwargs):
-        # Clear all previous data
         Product.objects.all().delete()
         Customer.objects.all().delete()
         Order.objects.all().delete()
 
-        # Create product objects (validation happens automatically here)
         product1 = Product.objects.create(
             name="7-pack of silver rings",
             price=19.99,
@@ -31,7 +30,6 @@ class Command(BaseCommand):
             available=True
         )
 
-        # Create customer objects (validation happens automatically here)
         customer1 = Customer.objects.create(
             name="Łukasz Stecyk",
             address="ul. Kamienna 135/13, Wrocław 50-045"
