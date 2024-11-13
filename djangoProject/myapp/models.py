@@ -1,5 +1,6 @@
 from django.core.exceptions import ValidationError
 from django.db import models
+from decimal import Decimal
 
 
 class Product(models.Model):
@@ -12,10 +13,14 @@ class Product(models.Model):
         return self.name
 
     def clean(self):
-        if self.price < 0:
-            raise ValidationError("Price cannot be negative.")
+        super().clean()
+        if self.price:
+            if self.price != self.price.quantize(Decimal("0.01")):
+                raise ValidationError({"price": "Ensure that there are no more than 2 decimal places."})
 
     def save(self, *args, **kwargs):
+        if isinstance(self.price, float):
+            self.price = Decimal(str(self.price))
         self.full_clean()
         super().save(*args, **kwargs)
 
@@ -42,7 +47,7 @@ class Order(models.Model):
         ('completed', 'Completed'),
     ]
 
-    status = models.CharField(max_length=20, choices=ORDER_STATUS_CHOICES, default='pending')
+    status = models.CharField(max_length=20, choices=ORDER_STATUS_CHOICES, default='new')
 
     def __str__(self):
         return "order id:" + str(self.id) + " status:" + self.status
@@ -50,18 +55,6 @@ class Order(models.Model):
     def calculate_total_price(self):
         return sum(product.price for product in self.products.all())
 
-    def can_fulfill_order(self):
-        unavailable_products = self.products.filter(available=False)
-        if unavailable_products.exists():
-            return False,
-        return True
-
-    def clean(self):
-        can_fulfill_order,message = self.can_fulfill_order()
-        if not can_fulfill_order:
-            raise ValidationError(message)
-
-    def save(self, *args, **kwargs):
-        self.full_clean()
-        super().save(*args, **kwargs)
+    def can_be_fulfilled(self):
+        return all(product.available for product in self.products.all())
 
