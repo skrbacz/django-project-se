@@ -17,6 +17,8 @@ class Product(models.Model):
         if self.price:
             if self.price != self.price.quantize(Decimal("0.01")):
                 raise ValidationError({"price": "Ensure that there are no more than 2 decimal places."})
+            if self.price < 0:
+                raise ValidationError({"price": "Price cannot be negative."})
 
     def save(self, *args, **kwargs):
         if isinstance(self.price, float):
@@ -57,4 +59,3 @@ class Order(models.Model):
 
     def can_be_fulfilled(self):
         return all(product.available for product in self.products.all())
-
