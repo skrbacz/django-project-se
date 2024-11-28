@@ -1,5 +1,4 @@
 from django.core.exceptions import ValidationError
-from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseNotFound, HttpResponseBadRequest
 import json
 from django.http import JsonResponse
