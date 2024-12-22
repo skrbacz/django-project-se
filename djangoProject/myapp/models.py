@@ -5,8 +5,8 @@ from decimal import Decimal
 
 class Product(models.Model):
     id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=255, unique=True)
-    price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal(0.01))])
+    name = models.CharField(max_length=150, unique=True, blank=False)
+    price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal('0.01'))])
     available = models.BooleanField(default=False)
 
     def __str__(self):
@@ -15,7 +15,7 @@ class Product(models.Model):
 
 class Customer(models.Model):
     id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100, blank=False)
     address = models.TextField()
 
     def __str__(self):
