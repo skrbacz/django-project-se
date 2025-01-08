@@ -20,7 +20,7 @@ jobs:
       - name: Set up enviroment
         uses: actions/setup-python@v2
         with:
-          python-version: '3.11'
+          python-version: '3.11.9'
 
       - name: Install dependencies
         run: |
