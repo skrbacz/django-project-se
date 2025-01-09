@@ -7,14 +7,14 @@ from drf_yasg import openapi
 from rest_framework.permissions import AllowAny
 
 schema_view = get_schema_view(
-openapi.Info(
-title="Software engineering lab",
-default_version="v1",
-description="API documentation for the lab",
-),
-public=True,
-permission_classes=(AllowAny,),
-authentication_classes=[],
+    openapi.Info(
+        title="Software engineering lab",
+        default_version="v1",
+        description="API documentation for the lab",
+    ),
+    public=True,
+    permission_classes=(AllowAny,),
+    authentication_classes=[],
 )
 
 
