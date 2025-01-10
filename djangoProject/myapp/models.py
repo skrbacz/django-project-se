@@ -2,9 +2,11 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from decimal import Decimal
 
+
 def positive(value):
     if value <= 0:
         raise ValidationError('Value must be positive.')
+
 
 class Product(models.Model):
     id = models.AutoField(primary_key=True)
