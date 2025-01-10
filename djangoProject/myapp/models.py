@@ -1,12 +1,15 @@
-from django.core.validators import MinValueValidator
+from django.core.exceptions import ValidationError
 from django.db import models
 from decimal import Decimal
 
+def positive(value):
+    if value <= 0:
+        raise ValidationError('Value must be positive.')
 
 class Product(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=150, unique=True, blank=False)
-    price = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal('0.01'))])
+    price = models.DecimalField(max_digits=10, decimal_places=2, validators=[positive])
     available = models.BooleanField(default=False)
 
     def __str__(self):
