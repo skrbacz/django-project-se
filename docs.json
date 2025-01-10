@@ -480,8 +480,7 @@ components:
           format: decimal
           multipleOf: 0.01
           maximum: 100000000
-          minimum: !!python/object/apply:decimal.Decimal
-          - '0.01'
+          minimum: -100000000
         available:
           type: boolean
       required:
