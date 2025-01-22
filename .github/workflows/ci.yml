@@ -1,19 +1,22 @@
 name: software-engineering-lab-9
-
 on:
   push:
     branches:
       - main
 
+permissions:
+  contents: write
+
 jobs:
-  docs:
+  test:
     runs-on: ubuntu-latest
-
-    needs: test
-
-    permissions:
-      contents: write
-
+    services:
+      db:
+        image: postgres:17
+        env:
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpassword
+          POSTGRES_DB: testdb
     steps:
       - name: Check out code
         uses: actions/checkout@v2
@@ -26,54 +29,57 @@ jobs:
       - name: Install dependencies
         run: |
           python -m venv venv
-          source venv/bin/activate
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          if [ ! -f "venv/bin/python" ]; then
+            echo "Error: Virtual environment not created or python executable missing."
+            exit 1
+          fi
+          ./venv/bin/python -m pip install --upgrade pip
+          ./venv/bin/pip install -r requirements.txt
 
-      - name: Generate API documentation
-        run: |
-          source venv/bin/activate
-          python djangoProject/manage.py generateschema > docs.json
+      - name: Build and start Containers
+        run: docker compose up --build -d
 
-      - name: Set up git for committing
-        run: |
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git config --global user.name "github-actions[bot]"
+      - name: Execute unit tests
+        run: docker exec $(docker compose ps -q api) python djangoProject/manage.py test djangoProject/myapp/tests
 
-      - name: Fetch latest changes from remote
-        run: |
-          git fetch origin main
 
-      - name: Commit and push documentation
-        run: |
-          git add docs.json index.html
-          git commit -m "Update documentation" || echo "No changes to commit"
-          git push origin main
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-jobs:
-  test:
+  docs:
+    needs: test
     runs-on: ubuntu-latest
-    services:
-      db:
-        image: postgres:17
-        env: 
-          POSTGRES_USER: testuser
-          POSTGRES_PASSWORD: testpassword
-          POSTGRES_DB: testdb
-    
     steps:
       - name: Check out code
         uses: actions/checkout@v2
 
-      - name: Step up Docker
+      - name: Set up Python environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.12
+
+      - name: Install dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y docker-compose
+          python -m venv venv
+          if [ ! -f "venv/bin/python" ]; then
+            echo "Error: Virtual environment not created or python executable missing."
+            exit 1
+          fi
+          ./venv/bin/python -m pip install --upgrade pip
+          ./venv/bin/pip install -r requirements.txt
 
-      - name: Build and start Containers
-        run: docker-compose up --build -d
+      - name: Generate API documentation
+        run: |
+          ./venv/bin/python SEList4/manage.py generateschema > docs.json
 
-      - name: Execute unit tests
-        run: docker exec $(docker-compose ps -q api) python djangoProject/manage.py test djangoProject/myapp/tests
+      - name: Clean up unnecessary files
+        run: |
+          find . -name "_pycache_" -type d -exec rm -r {} +
+          find . -name "*.pyc" -type f -delete
+
+      - name: Commit and push documentation
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          git add docs.json
+          git commit -m "Updated documentation" || echo "No changes to commit"
+          git push origin main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
