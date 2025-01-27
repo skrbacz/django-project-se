@@ -1,0 +1,72 @@
+name: Try this CI
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+      
+jobs:        
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      db:
+        image: postgres:17
+        env:
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpassword
+          POSTGRES_DB: testdb
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+        
+      - name: Set up Docker
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker-compose
+      - name: Build and start containers
+        run: docker-compose up --build -d
+
+      - name: Execute unit tests
+        run: docker exec $(docker-compose ps -q api) python djangoProject/manage.py test djangoProject/myapp/tests
+
+ 
+  docs:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+      
+    needs: test
+    
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+        
+      - name: Set up environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.12
+          
+      - name: Install dependencies
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+          pip install -r requirements.txt
+          
+      - name: Generate API documentation
+        run: |
+          source venv/bin/activate
+          python djangoProject/manage.py generateschema > docs.json
+          
+      - name: Commit and push documentation
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          git add docs.json index.html
+          git commit --allow-empty -m "API docs refreshed"
+          git push origin main
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
