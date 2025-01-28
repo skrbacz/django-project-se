@@ -10,7 +10,7 @@ class Product(models.Model):
     available = models.BooleanField(default=False)
 
     def __str__(self):
-        return self.name
+        return self.namepl
 
 
 class Customer(models.Model):

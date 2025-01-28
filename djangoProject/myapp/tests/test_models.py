@@ -24,6 +24,10 @@ class ProductModelTest(TestCase):
             temp_product = Product.objects.create(name=None, price=1.99, available=True)
             temp_product.full_clean()
 
+    def test_create_product_with_missing_available_field(self):
+        temp_product = Product.objects.create(name='Temporary product', price=1.99)
+        self.assertEqual(temp_product.available, False)
+
     def test_create_product_with_edge_name_length_maximum(self):
         temp_product = Product.objects.create(name='a' * 150, price=1.99, available=True)
         self.assertEqual(temp_product.name, 'a' * 150)
@@ -46,6 +50,11 @@ class ProductModelTest(TestCase):
             temp_product = Product.objects.create(name='', price=1.99, available=True)
             temp_product.full_clean()
 
+    def test_create_product_with_duplicate_name(self):
+        Product.objects.create(name='Temporary product', price=1.99, available=True)
+        with self.assertRaises(IntegrityError):
+            Product.objects.create(name='Temporary product', price=2.99, available=True)
+
     def test_create_product_with_edge_price_minimum(self):
         temp_product = Product.objects.create(name='Temporary product', price=0.01, available=True)
         self.assertEqual(temp_product.name, 'Temporary product')
@@ -58,9 +67,9 @@ class ProductModelTest(TestCase):
         self.assertEqual(temp_product.price, 999999.99)
         self.assertEqual(temp_product.available, True)
 
-    def test_create_product_with_price_less_than_minimum(self):
+    def test_create_product_with_price_exceeded(self):
         with self.assertRaises(ValidationError):
-            temp_product = Product.objects.create(name='Temporary product', price=0, available=True)
+            temp_product = Product.objects.create(name='Temporary product', price=1000000.01, available=True)
             temp_product.full_clean()
 
     def test_create_product_with_invalid_price_format(self):
@@ -81,6 +90,11 @@ class CustomerModelTest(TestCase):
             temp_customer = Customer.objects.create(name='Temporary customer', address=None)
             temp_customer.full_clean()
 
+    def test_create_customer_with_blank_address(self):
+        with self.assertRaises(ValidationError):
+            temp_customer = Customer.objects.create(name='Temporary customer', address='')
+            temp_customer.full_clean()
+
     def test_create_customer_with_edge_name_length_maximum(self):
         temp_customer = Customer.objects.create(name='a' * 100, address='Temporary address')
         self.assertEqual(temp_customer.name, 'a' * 100)
@@ -99,6 +113,11 @@ class CustomerModelTest(TestCase):
     def test_create_customer_with_name_too_short(self):
         with self.assertRaises(ValidationError):
             temp_customer = Customer.objects.create(name='', address='Temporary address')
+            temp_customer.full_clean()
+
+    def test_create_customer_with_no_name(self):
+        with self.assertRaises(IntegrityError):
+            temp_customer = Customer.objects.create(name=None, address='Temporary address')
             temp_customer.full_clean()
 
 
@@ -135,3 +154,18 @@ class OrderModelTest(TestCase):
         temp_order = Order.objects.create(customer=self.customer)
         temp_order.products.add(self.product1, self.product2)
         self.assertEqual(temp_order.can_be_fulfilled(), True)
+
+    def test_create_order_with_at_least_one_product_unavailable(self):
+        unavailable_product = Product.objects.create(name='Unavailable product', price=99.99, available=False)
+        temp_order = Order.objects.create(customer=self.customer)
+        temp_order.products.add(self.product1, unavailable_product)
+        self.assertEqual(temp_order.can_be_fulfilled(), False)
+
+    def test_create_order_with_missing_status(self):
+        temp_order = Order.objects.create(customer=self.customer)
+        self.assertEqual(temp_order.status, 'new')
+
+    def test_create_order_with_invalid_status(self):
+        with self.assertRaises(ValidationError):
+            temp_order = Order.objects.create(customer=self.customer, status='invalid_status')
+            temp_order.full_clean()
